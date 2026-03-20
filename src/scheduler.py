@@ -1,21 +1,44 @@
-from meeting import Meeting
-from conflict_resolver import has_conflict
+from src.availability import AvailabilityChecker
+from src.meeting import Meeting
 
-class SchedulerAgent:
-    def __init__(self, availability_manager):
-        self.availability_manager = availability_manager
+class Scheduler:
+    def __init__(self):
+        self.availability_checker = AvailabilityChecker()
 
-    def schedule_meeting(self, title, participants, start_time, end_time):
-        for user in participants:
-            meetings = self.availability_manager.get_meetings(user)
-            if has_conflict(meetings, start_time, end_time):
-                print(f"❌ Conflict detected for {user}")
-                return None
+    def schedule_meeting(self, title, start, end, participants):
+        unavailable = []
 
-        meeting = Meeting(title, participants, start_time, end_time)
+        for person in participants:
+            if not self.availability_checker.is_available(person, start, end):
+                unavailable.append(person)
 
-        for user in participants:
-            self.availability_manager.add_meeting(user, meeting)
+        if len(unavailable) == 0:
+            return {
+                "status": "success",
+                "meeting": Meeting(title, start, end, participants)
+            }
+        else:
+            suggestions = self.find_available_slots(participants)
+            return {
+                "status": "conflict",
+                "unavailable": unavailable,
+                "suggestions": suggestions
+            }
 
-        print("✅ Meeting scheduled successfully")
-        return meeting
+    def find_available_slots(self, participants):
+        possible_slots = []
+
+        # check slots from 9 to 18
+        for start in range(9, 18):
+            end = start + 1
+            all_available = True
+
+            for person in participants:
+                if not self.availability_checker.is_available(person, start, end):
+                    all_available = False
+                    break
+
+            if all_available:
+                possible_slots.append(f"{start}-{end}")
+
+        return possible_slots if possible_slots else ["No common slots available"]

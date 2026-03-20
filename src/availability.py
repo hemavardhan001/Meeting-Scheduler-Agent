@@ -1,13 +1,17 @@
-class AvailabilityManager:
+class AvailabilityChecker:
     def __init__(self):
-        self.schedules = {}
+        self.availability = {
+            "Alice": [(9, 12), (14, 18)],
+            "Bob": [(10, 13), (15, 17)],
+            "Charlie": [(9, 11), (13, 16)]
+        }
 
-    def add_user(self, user):
-        if user not in self.schedules:
-            self.schedules[user] = []
+    def is_available(self, participant, start, end):
+        # If participant not found → assume full availability
+        if participant not in self.availability:
+            return True
 
-    def add_meeting(self, user, meeting):
-        self.schedules[user].append(meeting)
-
-    def get_meetings(self, user):
-        return self.schedules.get(user, [])
+        for slot in self.availability.get(participant, []):
+            if start >= slot[0] and end <= slot[1]:
+                return True
+        return False
